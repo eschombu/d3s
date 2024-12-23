@@ -84,9 +84,9 @@ class graph(object):
             col = [graph.colors[i] for i in c]
             _nx.draw(G, pos, node_color=col, node_size=500, with_labels=True, font_size=10)
             
-    def spectralClustering(self, nc, variant='rw'):
+    def spectralClustering(self, nc, evs=5, variant='rw'):
         P = self.transitionMatrix(variant)
-        d, V = sortEig(P, evs=nc, which='LR')
+        d, V = sortEig(P, evs=evs, which='LR')
         _, c = _sp.cluster.vq.kmeans2(_np.real(V), nc, iter=100, minit='++')
         return (d, V, c)
 
