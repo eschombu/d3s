@@ -3,6 +3,7 @@ import numpy as _np
 import scipy as _sp
 import scipy.cluster
 import networkx as _nx
+from graspologic.cluster.divisive_cluster import DivisiveCluster
 
 from d3s.algorithms import dinv, sortEig
 
@@ -84,10 +85,20 @@ class graph(object):
             col = [graph.colors[i] for i in c]
             _nx.draw(G, pos, node_color=col, node_size=500, with_labels=True, font_size=10)
             
-    def spectralClustering(self, nc, evs=5, variant='rw'):
+    def spectralClustering(self, kmeans=None, max_components=None, max_level=None, evs=5, variant='rw'):
+        """Cluster the transition matrix using kmeans or divisive hierarchical clustering. Parameters for one of these
+        methods must be specified."""
+        if kmeans is None and (max_components is None or max_level is None):
+            raise ValueError('Either the number of kmeans clusters or the max_components and max_level for '
+                             'DivisiveCluster must be specified')
         P = self.transitionMatrix(variant)
         d, V = sortEig(P, evs=evs, which='LR')
-        _, c = _sp.cluster.vq.kmeans2(_np.real(V), nc, iter=100, minit='++')
+        if kmeans:
+            _, c = _sp.cluster.vq.kmeans2(_np.real(V), nc, iter=100, minit='++')
+        else:
+            clusterer = DivisiveCluster(max_components=max_components, max_level=max_level)
+            hierarchy_mat = clusterer.fit_predict(_np.real(V), fcluster=False)
+            c = list(map(lambda row: ''.join(map(str, row)), hierarchy_mat))
         return (d, V, c)
 
 class tgraph(object):
